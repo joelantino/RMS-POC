@@ -5,8 +5,14 @@ import ocr_processor
 import ai_highlight_generator
 from task_classifier import TaskClassifier
 from task_analyzer import TaskAnalyzer
+import cleanup_manager
 
 def main():
+    # Fresh Start: Check if it's a new day or if we should clear old data
+    if cleanup_manager.should_reset_for_new_day():
+        print("☀️ New day detected!")
+        cleanup_manager.cleanup_session_data(delete_reports=True)
+
     print("🚀 Starting AI Activity Tracker POC...")
     print("Press Ctrl+C to stop.")
     
@@ -92,6 +98,10 @@ def main():
             with open(report_name, "w", encoding="utf-8") as f:
                 f.write(report_text)
             print(f"✅ Final report saved to {report_name}")
+            
+            # Final Cleanup: Clear raw data but KEEP the one final report just generated
+            cleanup_manager.cleanup_session_data(delete_reports=False)
+            print("✅ Day data cleared. Ready for a fresh start next session!")
 
 if __name__ == "__main__":
     main()
