@@ -1,0 +1,13 @@
+AI-STRUCTURED ACTIVITY ANALYSIS
+MAIN THEME: Development of Intelligent Document Processing System
+WHAT HAPPENED: This project aims to design and implement a robust and adaptive document processing system that leverages AI models to improve accuracy, efficiency, and reliability.
+============================================================
+CATEGORY                       | HOURS SPENT
+------------------------------------------------------------
+Take a screenshot, extract tex | 0.08 hrs
+Develop a reliable document in | 0.08 hrs
+Schedule a meeting with Aruna  | 0.08 hrs
+Combine multiple AI models for | 0.08 hrs
+Create a robust and adaptive d | 0.08 hrs
+Review and annotate a presenta | 0.08 hrs
+Send and respond to emails in  | 0.08 hrs
