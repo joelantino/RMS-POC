@@ -21,20 +21,25 @@ class TaskAnalyzer:
         activities_list = list(activities_with_counts.keys())
         # Provide IDs to AI for reliable matching
         indexed_logs = "\n".join([f"ID_{i}: {act}" for i, act in enumerate(activities_list)])
-
         prompt = f"""
         Instructions: 
         1. Identify a high-level 'Main Task Title' (the project theme).
-        2. Provide a 1-sentence 'Overall Summary' of the work.
-        3. Categorize each activity ID into one of: Software Development, Communication, Meetings, Research, Documentation, Administrative, or Miscellaneous.
+        2. Provide a 1-sentence 'Overall Summary' explaining the impact of the work.
+        3. Categorize each activity ID into EXACTLY ONE of these categories:
+           - Software Development
+           - Communication
+           - Meetings
+           - Research
+           - Documentation
+           - Administrative
+           - Miscellaneous
 
         Format your response EXACTLY as follows:
         Main Task Title: [Title]
         Overall Summary: [Summary]
         ---
-        ID_0: [Category]
-        ID_1: [Category]
-        ... and so on for all IDs.
+        ID_0: [Category Name from list above]
+        ID_1: [Category Name from list above]
 
         Activities to process:
         {indexed_logs}
@@ -56,6 +61,7 @@ class TaskAnalyzer:
             # Extract Meta Info
             main_title = "General Work"
             overall_summary = "No summary generated."
+            ALLOWED_CATEGORIES = ["Software Development", "Communication", "Meetings", "Research", "Documentation", "Administrative", "Miscellaneous"]
             
             # Map for ID -> Category
             id_to_category = {}
@@ -67,21 +73,26 @@ class TaskAnalyzer:
                 elif line.startswith("Overall Summary:"):
                     overall_summary = line.replace("Overall Summary:", "").strip()
                 elif "ID_" in line and ":" in line:
-                    # Parse "ID_0: Category"
                     parts = line.split(":")
                     if len(parts) >= 2:
                         idx_str = parts[0].strip()
-                        category = parts[1].strip().strip('[]')
-                        id_to_category[idx_str] = category
+                        category_guess = parts[1].strip().strip('[](). ')
+                        # Match guess to allowed categories
+                        final_cat = "Miscellaneous"
+                        for cat in ALLOWED_CATEGORIES:
+                            if cat.lower() in category_guess.lower():
+                                final_cat = cat
+                                break
+                        id_to_category[idx_str] = final_cat
 
-            # Sum up time per category using the ID map
+            # Sum up time per category
             category_summary = {}
             for i, activity in enumerate(activities_list):
                 id_key = f"ID_{i}"
-                found_category = id_to_category.get(id_key, "Miscellaneous")
+                category = id_to_category.get(id_key, "Miscellaneous")
                 
                 minutes = activities_with_counts[activity]
-                category_summary[found_category] = category_summary.get(found_category, 0) + minutes
+                category_summary[category] = category_summary.get(category, 0) + minutes
             
             return {
                 "title": main_title,
