@@ -12,8 +12,8 @@ class TaskAnalyzer:
 
     def analyze_and_group(self, activities_with_counts):
         """
-        Analyzes activities and maps each to a 'Main Task'.
-        Returns a dictionary mapping Main Task -> Total Minutes.
+        Analyzes activities to identify a single high-level 'Main Task' for the day
+        and categorize sub-activities.
         """
         if not activities_with_counts:
             return {}
@@ -22,19 +22,18 @@ class TaskAnalyzer:
         logs_text = "\n".join([f"- {act}" for act in activities_list])
 
         prompt = f"""
-        Instructions: Categorize each specific activity into one of these High-Level Categories:
-        1. Software Development
-        2. Communication
-        3. Meetings
-        4. Research & Learning
-        5. Documentation
-        6. Administrative
-        7. Miscellaneous
+        Instructions: 
+        1. Identify the single most important 'Main Task' (Title) that describes the overall theme of these activities.
+        2. Provide a brief 1-sentence summary of 'What this day was about'.
+        3. Categorize each activity into: Software Development, Communication, Meetings, Research, Documentation, Administrative, or Miscellaneous.
 
-        Return the result exactly in this format for every activity:
+        Format your response EXACTLY as follows:
+        Main Task Title: [Dynamic Title here, e.g., Building OCR Module]
+        Overall Summary: [One sentence description of all work done]
+        ---
         Activity: [Activity Name] | Category: [Category Name]
 
-        Activities to categorize:
+        Activities to process:
         {logs_text}
         """
 
@@ -45,34 +44,47 @@ class TaskAnalyzer:
         }
 
         try:
-            print("🧠 AI is analyzing activities...")
+            print("🧠 AI is identifying your Main Task for the day...")
             response = requests.post(self.api_url, json=payload)
             response.raise_for_status()
             
             raw_text = response.json().get("response", "")
             
-            # Sum up time per category
-            main_task_summary = {}
+            # Extract Meta Info
+            main_title = "General Work"
+            overall_summary = "No summary generated."
             
-            # Process the text response line by line
-            # Format: Activity: ... | Category: ...
+            for line in raw_text.split('\n'):
+                if line.startswith("Main Task Title:"):
+                    main_title = line.replace("Main Task Title:", "").strip()
+                elif line.startswith("Overall Summary:"):
+                    overall_summary = line.replace("Overall Summary:", "").strip()
+
+            # Sum up time per category
+            category_summary = {}
             for activity, minutes in activities_with_counts.items():
                 found_category = "Miscellaneous"
-                # Look for the specific activity in the AI output
                 for line in raw_text.split('\n'):
                     if activity.lower() in line.lower() and "Category:" in line:
                         parts = line.split("Category:")
                         if len(parts) > 1:
                             found_category = parts[1].strip()
                             break
-                
-                main_task_summary[found_category] = main_task_summary.get(found_category, 0) + minutes
+                category_summary[found_category] = category_summary.get(found_category, 0) + minutes
             
-            return main_task_summary
+            return {
+                "title": main_title,
+                "summary": overall_summary,
+                "breakdown": category_summary
+            }
 
         except Exception as e:
             print(f"Error during AI analysis: {e}")
-            return {"Uncategorized": sum(activities_with_counts.values())}
+            return {
+                "title": "Daily Activity",
+                "summary": "Error during summarization.",
+                "breakdown": {"Uncategorized": sum(activities_with_counts.values())}
+            }
 
 if __name__ == "__main__":
     # Test with sample data

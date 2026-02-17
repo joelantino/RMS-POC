@@ -30,24 +30,34 @@ def generate_ai_report(tasks):
 
     print("\n🤖 Generating AI Structured Activity Report...")
     analyzer = TaskAnalyzer()
-    main_task_summary = analyzer.analyze_and_group(dict(tasks))
+    report_data = analyzer.analyze_and_group(dict(tasks))
     
-    print("\n📋 FINAL ACTIVITY REPORT (BY MAIN TASK):")
-    print("=" * 45)
-    print(f"{'MAIN TASK':<30} | {'HOURS SPENT':<10}")
-    print("-" * 45)
+    title = report_data.get("title", "Daily Work")
+    summary = report_data.get("summary", "No summary provided.")
+    breakdown = report_data.get("breakdown", {})
+
+    print("\n📋 PROJECT ACTIVITY SUMMARY:")
+    print("=" * 60)
+    print(f"MAIN THEME: {title}")
+    print(f"WHAT HAPPENED: {summary}")
+    print("=" * 60)
+    print(f"{'CATEGORY':<30} | {'HOURS SPENT':<10}")
+    print("-" * 60)
     
-    report_text = "AI-STRUCTURED ACTIVITY ANALYSIS\n" + "=" * 45 + "\n"
-    report_text += f"{'MAIN TASK':<30} | {'HOURS SPENT':<10}\n"
-    report_text += "-" * 45 + "\n"
+    report_text = f"AI-STRUCTURED ACTIVITY ANALYSIS\n"
+    report_text += f"MAIN THEME: {title}\n"
+    report_text += f"WHAT HAPPENED: {summary}\n"
+    report_text += "=" * 60 + "\n"
+    report_text += f"{'CATEGORY':<30} | {'HOURS SPENT':<10}\n"
+    report_text += "-" * 60 + "\n"
     
-    for main_task, minutes in main_task_summary.items():
+    for category, minutes in breakdown.items():
         hours = minutes / 60
-        line = f"{main_task[:30]:<30} | {hours:.2f} hrs"
+        line = f"{category[:30]:<30} | {hours:.2f} hrs"
         print(line)
         report_text += line + "\n"
     
-    print("=" * 45)
+    print("=" * 60)
     
     # Save analysis to a separate file
     report_name = f"final_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
