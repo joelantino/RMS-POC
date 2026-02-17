@@ -4,6 +4,7 @@ import screenshot_capture
 import ocr_processor
 import ai_highlight_generator
 from task_classifier import TaskClassifier
+from task_analyzer import TaskAnalyzer
 
 def main():
     print("🚀 Starting AI Activity Tracker POC...")
@@ -60,6 +61,27 @@ def main():
     except KeyboardInterrupt:
         print("\n🛑 Tracker stopped by user.")
         print(classifier.get_summary())
+        
+        # New Feature: AI-powered Main Task / Sub Task Grouping
+        print("\n🤖 Generating AI Structured Analysis...")
+        # Get all highlights from the current session tasks
+        activities = list(classifier.tasks.keys())
+        if activities:
+            analyzer = TaskAnalyzer()
+            analysis = analyzer.analyze_and_group(activities)
+            
+            print("\n📋 STRUCTURED ACTIVITY REPORT:")
+            print("=" * 40)
+            print(analysis)
+            print("=" * 40)
+            
+            # Save analysis to a separate file
+            report_name = f"analysis_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+            with open(report_name, "w", encoding="utf-8") as f:
+                f.write("AI-STRUCTURED ACTIVITY ANALYSIS\n")
+                f.write("=" * 40 + "\n")
+                f.write(analysis)
+            print(f"✅ Detailed analysis saved to {report_name}")
 
 if __name__ == "__main__":
     main()
