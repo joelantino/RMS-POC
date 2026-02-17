@@ -1,0 +1,8 @@
+AI-STRUCTURED ACTIVITY ANALYSIS
+=============================================
+MAIN TASK                      | HOURS SPENT
+---------------------------------------------
+Software Development           | 0.33 hrs
+Meetings                       | 0.08 hrs
+Communication                  | 0.08 hrs
+Administrative                 | 0.08 hrs

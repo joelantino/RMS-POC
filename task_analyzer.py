@@ -22,47 +22,57 @@ class TaskAnalyzer:
         logs_text = "\n".join([f"- {act}" for act in activities_list])
 
         prompt = f"""
-        Analyze the following person's activity logs and group them into 'Main Tasks' (high-level categories like 'Programming', 'Communication', 'Meetings', 'Research').
-        
-        Provide the result as a JSON object where the key is the Activity from the log and the value is the Main Task it belongs to.
-        Example:
-        {{
-            "Writing Python code for OCR": "Software Development",
-            "Replying to client emails": "Communication"
-        }}
+        Instructions: Categorize each specific activity into one of these High-Level Categories:
+        1. Software Development
+        2. Communication
+        3. Meetings
+        4. Research & Learning
+        5. Documentation
+        6. Administrative
+        7. Miscellaneous
 
-        Activities:
+        Return the result exactly in this format for every activity:
+        Activity: [Activity Name] | Category: [Category Name]
+
+        Activities to categorize:
         {logs_text}
-
-        JSON Response Only:
         """
 
         payload = {
             "model": self.model,
             "prompt": prompt,
-            "format": "json",
             "stream": False
         }
 
         try:
-            print("🧠 AI is grouping activities into Main Tasks...")
+            print("🧠 AI is analyzing activities...")
             response = requests.post(self.api_url, json=payload)
             response.raise_for_status()
-            result_json = response.json().get("response", "{}")
-            mapping = json.loads(result_json)
             
-            # Calculate time per main task
+            raw_text = response.json().get("response", "")
+            
+            # Sum up time per category
             main_task_summary = {}
+            
+            # Process the text response line by line
+            # Format: Activity: ... | Category: ...
             for activity, minutes in activities_with_counts.items():
-                main_task = mapping.get(activity, "Miscellaneous")
-                main_task_summary[main_task] = main_task_summary.get(main_task, 0) + minutes
+                found_category = "Miscellaneous"
+                # Look for the specific activity in the AI output
+                for line in raw_text.split('\n'):
+                    if activity.lower() in line.lower() and "Category:" in line:
+                        parts = line.split("Category:")
+                        if len(parts) > 1:
+                            found_category = parts[1].strip()
+                            break
+                
+                main_task_summary[found_category] = main_task_summary.get(found_category, 0) + minutes
             
             return main_task_summary
 
         except Exception as e:
-            print(f"Error during analysis: {e}")
-            # Fallback: Just return the raw activities as main tasks
-            return {act: mins for act, mins in activities_with_counts.items()}
+            print(f"Error during AI analysis: {e}")
+            return {"Uncategorized": sum(activities_with_counts.values())}
 
 if __name__ == "__main__":
     # Test with sample data
