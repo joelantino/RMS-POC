@@ -10,52 +10,59 @@ class TaskAnalyzer:
         self.api_url = OLLAMA_API_URL
         self.model = MODEL_NAME
 
-    def analyze_and_group(self, activity_logs):
+    def analyze_and_group(self, activities_with_counts):
         """
-        Analyzes a list of activities and groups them into 
-        Main Tasks and Sub Tasks using AI.
+        Analyzes activities and maps each to a 'Main Task'.
+        Returns a dictionary mapping Main Task -> Total Minutes.
         """
-        if not activity_logs:
-            return "No activities to analyze."
+        if not activities_with_counts:
+            return {}
 
-        # Combine logs into a text block for AI analysis
-        logs_text = "\n".join([f"- {log}" for log in activity_logs])
+        activities_list = list(activities_with_counts.keys())
+        logs_text = "\n".join([f"- {act}" for act in activities_list])
 
         prompt = f"""
-        Analyze the following person's daily activity logs. 
-        Identify the 'Main Tasks' (high-level goals or categories) 
-        and group the 'Sub Tasks' (specific actions) under them.
+        Analyze the following person's activity logs and group them into 'Main Tasks' (high-level categories like 'Programming', 'Communication', 'Meetings', 'Research').
         
-        Format the output as a clean hierarchical list:
-        # Main Task 1
-          - Sub Task A
-          - Sub Task B
-        # Main Task 2
-          - Sub Task C
+        Provide the result as a JSON object where the key is the Activity from the log and the value is the Main Task it belongs to.
+        Example:
+        {{
+            "Writing Python code for OCR": "Software Development",
+            "Replying to client emails": "Communication"
+        }}
 
-        Daily Logs:
+        Activities:
         {logs_text}
 
-        Response:
+        JSON Response Only:
         """
 
         payload = {
             "model": self.model,
             "prompt": prompt,
+            "format": "json",
             "stream": False
         }
 
         try:
-            print("🧠 AI is analyzing and grouping tasks...")
+            print("🧠 AI is grouping activities into Main Tasks...")
             response = requests.post(self.api_url, json=payload)
             response.raise_for_status()
-            result = response.json()
-            return result.get("response", "").strip()
+            result_json = response.json().get("response", "{}")
+            mapping = json.loads(result_json)
+            
+            # Calculate time per main task
+            main_task_summary = {}
+            for activity, minutes in activities_with_counts.items():
+                main_task = mapping.get(activity, "Miscellaneous")
+                main_task_summary[main_task] = main_task_summary.get(main_task, 0) + minutes
+            
+            return main_task_summary
 
-        except requests.exceptions.ConnectionError:
-            return "Error: Could not connect to Ollama. Ensure it's running locally."
         except Exception as e:
-            return f"Error during analysis: {str(e)}"
+            print(f"Error during analysis: {e}")
+            # Fallback: Just return the raw activities as main tasks
+            return {act: mins for act, mins in activities_with_counts.items()}
 
 if __name__ == "__main__":
     # Test with sample data
