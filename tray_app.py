@@ -120,9 +120,15 @@ class ActivityTrackerTray:
         
         # Auto-open the report for the user
         try:
-            os.startfile(report_name)
-        except:
-            pass
+            import platform
+            if platform.system() == "Windows":
+                os.startfile(report_name)
+            elif platform.system() == "Darwin": # Mac
+                subprocess.call(["open", report_name])
+            else: # Linux
+                subprocess.call(["xdg-open", report_name])
+        except Exception as e:
+            print(f"Error opening report: {e}")
 
     def on_exit(self, icon, item):
         self.on_stop(icon, item)
