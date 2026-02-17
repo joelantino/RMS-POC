@@ -1,3 +1,4 @@
+import os
 import time
 from datetime import datetime
 import screenshot_capture
@@ -34,6 +35,14 @@ def main():
             # 2. Extract Text via OCR
             print("Running OCR...")
             text = ocr_processor.extract_text(image_path)
+            
+            # Auto-Delete Screenshot immediately after extraction
+            try:
+                if os.path.exists(image_path):
+                    os.remove(image_path)
+                    print(f"🗑️ Screenshot auto-deleted: {image_path}")
+            except Exception as e:
+                print(f"Error auto-deleting screenshot: {e}")
             
             if not text.strip():
                 print("⚠️ No text found in screenshot.")
